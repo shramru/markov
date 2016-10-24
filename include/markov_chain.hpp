@@ -20,6 +20,9 @@ class MarkovChain {
     typedef std::shared_ptr<Node> NodePtr;
 
     struct Base {
+        static int currentId;
+
+        int id;
         std::vector<NodePtr> nodes;
 
         std::function<size_t (const NodePtr&)> nodeHash = [](const NodePtr& n) {
@@ -37,6 +40,10 @@ class MarkovChain {
     };
 
     struct Node {
+        static int currentId;
+
+        int id;
+
         BasePtr base;
         std::wstring value;
 
@@ -75,7 +82,7 @@ public:
     static MarkovChain fromText(const std::wstring& text, int n);
     static MarkovChain fromSavedFile(const std::wstring& filename);
 
-    void save(const std::wstring& filename);
+    void save(const std::string& filename);
     std::wstring next(const std::vector<std::wstring>& base, int n);
 };
 

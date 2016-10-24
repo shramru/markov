@@ -2,15 +2,18 @@
 // Created by vladislav on 23.10.16.
 //
 
-#include "markovchain.hpp"
+#include "markov_chain.hpp"
 #include <algorithm>
 #include <sstream>
 
+int MarkovChain::Base::currentId = 0;
+int MarkovChain::Node::currentId = 0;
+
 MarkovChain::Base::Base()
-        : childToCount(10, nodeHash, nodeEqual), childToBase(10, nodeHash, nodeEqual) {}
+        : id(++currentId), childToCount(10, nodeHash, nodeEqual), childToBase(10, nodeHash, nodeEqual) {}
 
 MarkovChain::Node::Node(const std::wstring &value)
-        : value(value) {
+        : id(++currentId), value(value) {
     base = std::make_shared<Base>();
 }
 
@@ -75,7 +78,7 @@ MarkovChain MarkovChain::fromSavedFile(const std::wstring& filename) {
     return chain;
 }
 
-void MarkovChain::save(const std::wstring &filename) {
+void MarkovChain::save(const std::string &filename) {
 
 }
 
