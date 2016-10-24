@@ -5,20 +5,48 @@
 #include "markov_chain.hpp"
 #include <algorithm>
 #include <sstream>
+#include <locale>
 
-int MarkovChain::Base::currentId = 0;
-int MarkovChain::Node::currentId = 0;
+long MarkovChain::Base::currentId = 0;
+long MarkovChain::Node::currentId = 0;
+
+std::function<size_t (const MarkovChain::NodePtr&)>
+        MarkovChain::Base::nodeHash = [](const NodePtr& n) {
+    return std::hash<std::wstring>()(n->value);
+};
+
+std::function<bool (const MarkovChain::NodePtr&, const MarkovChain::NodePtr&)>
+        MarkovChain::Base::nodeEqual = [](const NodePtr& a, const NodePtr& b) {
+    return a->value == b->value;
+};
+
+std::function<size_t (const MarkovChain::BasePtr&)>
+        MarkovChain::baseHash = [](const BasePtr& b) {
+    size_t size = b->nodes.size();
+    size_t seed = 0;
+    for (size_t i = 0; i < size; ++i)
+        ::hash_combine(seed, b->nodes[i]->value, i);
+    return seed;
+};
+
+std::function<bool (const MarkovChain::BasePtr&, const MarkovChain::BasePtr&)>
+        MarkovChain::baseEqual = [](const BasePtr& a, const BasePtr& b) {
+    if (a->nodes.size() != b->nodes.size()) return false;
+    for (size_t i = 0; i < a->nodes.size(); ++i) {
+        if (a->nodes[i]->value != b->nodes[i]->value)
+            return false;
+    }
+    return true;
+};
 
 MarkovChain::Base::Base()
         : id(++currentId), childToCount(10, nodeHash, nodeEqual), childToBase(10, nodeHash, nodeEqual) {}
 
 MarkovChain::Node::Node(const std::wstring &value)
-        : id(++currentId), value(value) {
-    base = std::make_shared<Base>();
-}
+        : id(++currentId), value(value), base(std::make_shared<Base>()) {}
 
 MarkovChain::Node::Node(const std::wstring &value, const BasePtr &base)
-        : value(value), base(base) {}
+        : id(++currentId), value(value), base(base) {}
 
 void MarkovChain::Node::setBaseFromPrevious(const std::shared_ptr<Node> &prev) {
     for (size_t i = 1; i < prev->base->nodes.size(); ++i) {
@@ -33,7 +61,6 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
     MarkovChain chain;
     std::wstring words = removePunctuation(text);
     std::wstringstream ss(toLowerCase(words));
-    words.clear();
 
     std::wstring word;
     BasePtr base = std::make_shared<Base>();

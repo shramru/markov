@@ -6,44 +6,36 @@
 #define MARKOV_MARKOVCHAIN_HPP
 
 #include <string>
+#include <vector>
 #include <unordered_map>
 #include <memory>
-#include <locale>
-#include <vector>
 #include "hash_vector.hpp"
 
 class MarkovChain {
 
-    struct Base;
-    struct Node;
+    struct Base; struct Node;
     typedef std::shared_ptr<Base> BasePtr;
     typedef std::shared_ptr<Node> NodePtr;
 
-    struct Base {
-        static int currentId;
+    class Base {
+        static long currentId;
+        static std::function<size_t (const NodePtr&)> nodeHash;
+        static std::function<bool (const NodePtr&, const NodePtr&)> nodeEqual;
 
-        int id;
+    public:
+        long id;
         std::vector<NodePtr> nodes;
-
-        std::function<size_t (const NodePtr&)> nodeHash = [](const NodePtr& n) {
-            return std::hash<std::wstring>()(n->value);
-        };
-
-        std::function<bool (const NodePtr&, const NodePtr&)> nodeEqual = [](const NodePtr& a, const NodePtr& b) {
-            return a->value == b->value;
-        };
-
         std::unordered_map<NodePtr, int, decltype(nodeHash), decltype(nodeEqual)> childToCount;
         std::unordered_map<NodePtr, BasePtr, decltype(nodeHash), decltype(nodeEqual)> childToBase;
 
         Base();
     };
 
-    struct Node {
-        static int currentId;
+    class Node {
+        static long currentId;
 
-        int id;
-
+    public:
+        long id;
         BasePtr base;
         std::wstring value;
 
@@ -53,28 +45,14 @@ class MarkovChain {
         Node(const std::wstring& value, const BasePtr& base);
     };
 
-    std::function<size_t (const BasePtr&)> baseHash = [](const BasePtr& b) {
-        size_t size = b->nodes.size();
-        size_t seed = 0;
-        for (size_t i = 0; i < size; ++i)
-            ::hash_combine(seed, b->nodes[i]->value, i);
-        return seed;
-    };
-
-    std::function<bool (const BasePtr&, const BasePtr&)> baseEqual = [](const BasePtr& a, const BasePtr& b) {
-        if (a->nodes.size() != b->nodes.size()) return false;
-        for (size_t i = 0; i < a->nodes.size(); ++i) {
-            if (a->nodes[i]->value != b->nodes[i]->value)
-                return false;
-        }
-        return true;
-    };
-
-    std::unordered_map<BasePtr, NodePtr, decltype(baseHash), decltype(baseEqual)> baseToNode;
-    std::unordered_map<std::vector<std::wstring>, BasePtr> wordsToBase;
+    static std::function<size_t (const BasePtr&)> baseHash;
+    static std::function<bool (const BasePtr&, const BasePtr&)> baseEqual;
 
     static std::wstring removePunctuation(const std::wstring& text);
     static std::wstring toLowerCase(const std::wstring& text);
+
+    std::unordered_map<BasePtr, NodePtr, decltype(baseHash), decltype(baseEqual)> baseToNode;
+    std::unordered_map<std::vector<std::wstring>, BasePtr> wordsToBase;
 
     MarkovChain();
 
