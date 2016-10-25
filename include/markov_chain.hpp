@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <unordered_map>
 #include <memory>
@@ -18,29 +19,34 @@ class MarkovChain {
     struct Base; struct Node;
     typedef std::shared_ptr<Base> BasePtr;
     typedef std::shared_ptr<Node> NodePtr;
+    typedef std::weak_ptr<Base> BaseWPtr;
+    typedef std::weak_ptr<Node> NodeWPtr;
 
     friend std::wostream &operator<<(std::wostream&, const MarkovChain::Node&);
     friend std::wistream &operator>>(std::wistream&, MarkovChain::Node&);
     friend std::wostream &operator<<(std::wostream&, const MarkovChain::Base&);
-    friend std::wistream &operator>>(std::wistream&, MarkovChain::Base&);
 
-    static std::function<size_t (const NodePtr&)> nodeHash;
-    static std::function<bool (const NodePtr&, const NodePtr&)> nodeEqual;
-    static std::function<size_t (const BasePtr&)> baseHash;
-    static std::function<bool (const BasePtr&, const BasePtr&)> baseEqual;
+    static std::function<size_t (const NodeWPtr&)> nodeHash;
+    static std::function<bool (const NodeWPtr&, const NodeWPtr&)> nodeEqual;
+    static std::function<size_t (const BaseWPtr&)> baseHash;
+    static std::function<bool (const BaseWPtr&, const BaseWPtr&)> baseEqual;
+    static std::function<bool (const BaseWPtr&, const BaseWPtr&)> baseLess;
     static std::function<size_t (const std::vector<std::wstring>&)> vectorHash;
     static std::function<bool (const std::vector<std::wstring>&, const std::vector<std::wstring>&)> vectorEqual;
 
     static std::wstring removePunctuation(const std::wstring& text);
     static std::wstring toLowerCase(const std::wstring& text);
 
+    static void readBase(std::wifstream& fs, BasePtr& base, std::map<long, NodePtr>& nodes,
+                         std::map<long, BasePtr, std::greater<long>>& bases);
+
     struct Base {
         static long currentId;
 
         long id;
-        std::vector<NodePtr> nodes;
-        std::unordered_map<NodePtr, int, decltype(nodeHash), decltype(nodeEqual)> childToCount;
-        std::unordered_map<NodePtr, BasePtr, decltype(nodeHash), decltype(nodeEqual)> childToBase;
+        std::vector<NodeWPtr> nodes;
+        std::unordered_map<NodeWPtr, long, decltype(nodeHash), decltype(nodeEqual)> childToCount;
+        std::unordered_map<NodeWPtr, BaseWPtr, decltype(nodeHash), decltype(nodeEqual)> childToBase;
 
         Base();
     };
@@ -55,11 +61,12 @@ class MarkovChain {
         Node(const std::wstring& value);
     };
 
-    std::unordered_map<BasePtr, NodePtr, decltype(baseHash), decltype(baseEqual)> baseToNode;
-    std::unordered_map<std::vector<std::wstring>, BasePtr, decltype(vectorHash), decltype(vectorEqual)> wordsToBase;
+    std::unordered_map<BaseWPtr, NodeWPtr, decltype(baseHash), decltype(baseEqual)> baseToNode;
+    std::unordered_map<std::vector<std::wstring>, BaseWPtr, decltype(vectorHash), decltype(vectorEqual)> wordsToBase;
 
     std::map<long, NodePtr> nodes;
-    std::map<long, BasePtr, std::greater<int>> bases;
+    std::map<long, BasePtr, std::greater<long>> bases;
+    std::set<BaseWPtr, decltype(baseLess)> basesWeak;
 
     MarkovChain();
 

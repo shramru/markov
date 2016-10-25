@@ -7,14 +7,14 @@
 
 long MarkovChain::Node::currentId = 0;
 
-std::function<size_t (const MarkovChain::NodePtr&)>
-        MarkovChain::nodeHash = [](const NodePtr& n) {
-    return std::hash<std::wstring>()(n->value);
+std::function<size_t (const MarkovChain::NodeWPtr&)>
+        MarkovChain::nodeHash = [](const NodeWPtr& n) {
+    return std::hash<std::wstring>()(n.lock()->value);
 };
 
-std::function<bool (const MarkovChain::NodePtr&, const MarkovChain::NodePtr&)>
-        MarkovChain::nodeEqual = [](const NodePtr& a, const NodePtr& b) {
-    return a->value == b->value;
+std::function<bool (const MarkovChain::NodeWPtr&, const MarkovChain::NodeWPtr&)>
+        MarkovChain::nodeEqual = [](const NodeWPtr& a, const NodeWPtr& b) {
+    return a.lock()->value == b.lock()->value;
 };
 
 std::wostream &operator<<(std::wostream &strm, const MarkovChain::Node &n) {

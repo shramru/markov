@@ -8,24 +8,37 @@
 
 long MarkovChain::Base::currentId = 0;
 
-std::function<size_t (const MarkovChain::BasePtr&)>
-        MarkovChain::baseHash = [](const BasePtr& b) {
+std::function<size_t (const MarkovChain::BaseWPtr&)>
+        MarkovChain::baseHash = [](const BaseWPtr& bw) {
+    auto b = bw.lock();
     size_t size = b->nodes.size();
-    auto aaa = b->nodes;
     size_t seed = 0;
-    for (size_t i = 0; i < size; ++i)
-        ::hash_combine(seed, b->nodes[i]->value, i);
+    for (size_t i = 0; i < size; ++i) {
+        ::hash_combine(seed, b->nodes[i].lock()->value, i);
+    }
     return seed;
 };
 
-std::function<bool (const MarkovChain::BasePtr&, const MarkovChain::BasePtr&)>
-        MarkovChain::baseEqual = [](const BasePtr& a, const BasePtr& b) {
+std::function<bool (const MarkovChain::BaseWPtr&, const MarkovChain::BaseWPtr&)>
+        MarkovChain::baseEqual = [](const BaseWPtr& aw, const BaseWPtr& bw) {
+    auto a = aw.lock(); auto b = bw.lock();
     if (a->nodes.size() != b->nodes.size()) return false;
     for (size_t i = 0; i < a->nodes.size(); ++i) {
-        if (a->nodes[i]->value != b->nodes[i]->value)
+        if (a->nodes[i].lock()->value != b->nodes[i].lock()->value)
             return false;
     }
     return true;
+};
+
+std::function<bool (const MarkovChain::BaseWPtr&, const MarkovChain::BaseWPtr&)>
+        MarkovChain::baseLess = [] (const BaseWPtr& aw, const BaseWPtr& bw) {
+    auto a = aw.lock(), b = bw.lock();
+    std::wstring as, bs;
+    for (size_t i = 0; i < a->nodes.size(); ++i) {
+        as += a->nodes[i].lock()->value;
+        bs += b->nodes[i].lock()->value;
+    }
+    return as < bs;
 };
 
 std::wostream &operator<<(std::wostream &strm, const MarkovChain::Base &b) {
@@ -33,55 +46,16 @@ std::wostream &operator<<(std::wostream &strm, const MarkovChain::Base &b) {
 
     strm << b.nodes.size() << '\n';
     for (const auto& n : b.nodes)
-        strm << n->id << ' ';
+        strm << n.lock()->id << ' ';
     strm << '\n';
 
     strm << b.childToCount.size() << '\n';
     for (const auto& p : b.childToCount)
-        strm << p.first->id << ' ' << p.second << '\n';
+        strm << p.first.lock()->id << ' ' << p.second << '\n';
 
     strm << b.childToBase.size() << '\n';
     for (const auto& p : b.childToBase)
-        strm << p.first->id << ' ' << p.second->id << '\n';
-
-    return strm;
-}
-
-std::wistream &operator>>(std::wistream &strm, MarkovChain::Base &b) {
-    b.nodes.clear();
-    b.childToBase.clear();
-    b.childToCount.clear();
-
-    strm >> b.id;
-
-    size_t nodesSize;
-    strm >> nodesSize;
-    b.nodes.reserve(nodesSize);
-    for (size_t i = 0; i < nodesSize; ++i) {
-        MarkovChain::NodePtr node = std::make_shared<MarkovChain::Node>();
-        strm >> node->id;
-        b.nodes.push_back(node);
-    }
-
-    size_t ccSize;
-    strm >> ccSize;
-    b.childToCount.reserve(ccSize);
-    for (size_t i = 0; i < ccSize; ++i) {
-        MarkovChain::NodePtr node = std::make_shared<MarkovChain::Node>();
-        int count;
-        strm >> node->id >> count;
-        b.childToCount[node] = count;
-    }
-
-    size_t cbSize;
-    strm >> cbSize;
-    b.nodes.reserve(cbSize);
-    for (size_t i = 0; i < cbSize; ++i) {
-        MarkovChain::NodePtr node = std::make_shared<MarkovChain::Node>();
-        MarkovChain::BasePtr base = std::make_shared<MarkovChain::Base>();
-        strm >> node->id >> base->id;
-        b.childToBase[node] = base;
-    }
+        strm << p.first.lock()->id << ' ' << p.second.lock()->id << '\n';
 
     return strm;
 }

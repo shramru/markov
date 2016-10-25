@@ -29,7 +29,8 @@ std::function<bool (const std::vector<std::wstring>&, const std::vector<std::wst
 
 MarkovChain::MarkovChain()
         : baseToNode(BUCKET_SIZE, baseHash, baseEqual),
-          wordsToBase(BUCKET_SIZE, vectorHash, vectorEqual) {}
+          wordsToBase(BUCKET_SIZE, vectorHash, vectorEqual),
+          basesWeak(baseLess) {}
 
 MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
     MarkovChain chain;
@@ -49,6 +50,7 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
         wordsBase.push_back(word);
     }
     chain.wordsToBase[wordsBase] = base;
+    chain.basesWeak.insert(base);
 
     ss >> word;
     NodePtr prev = std::make_shared<Node>(word);
@@ -65,25 +67,25 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
         }
         newBase->nodes.push_back(prev);
 
-        NodePtr& cNode = chain.baseToNode[newBase];
-        if (cNode == nullptr) {
-            cNode = node;
-            chain.nodes[node->id] = node;
+        NodeWPtr& wNode = chain.baseToNode[newBase];
+        if (wNode.lock() == nullptr) {
+            wNode = node;
             chain.bases[newBase->id] = newBase;
+            chain.basesWeak.insert(newBase);
             wordsBase.clear();
             for (const auto& w : newBase->nodes)
-                wordsBase.push_back(w->value);
+                wordsBase.push_back(w.lock()->value);
             chain.wordsToBase[wordsBase] = newBase;
         } else {
-            --Node::currentId;
+            newBase = chain.basesWeak.find(newBase)->lock();
         }
 
-        ++newBase->childToCount[node];
         base->childToBase[prev] = newBase;
         prev = node;
+        chain.nodes[prev->id] = prev;
+        ++newBase->childToCount[prev];
         base = newBase;
     }
-
 
     return chain;
 }
@@ -104,18 +106,11 @@ MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
         fs >> *node;
         chain.nodes[node->id] = node;
     }
-    Base temp;
-    for (size_t i = 0; i < basesSize && fs; ++i) {
-        fs >> temp;
-        BasePtr base = std::make_shared<Base>();
-        base->id = temp.id;
-        for (const auto& n : temp.nodes)
-            base->nodes.push_back(chain.nodes[n->id]);
-        for (const auto& cc : temp.childToCount)
-            base->childToCount[chain.nodes[cc.first->id]] = cc.second;
-        for (const auto& cb : temp.childToBase)
-            base->childToBase[chain.nodes[cb.first->id]] = chain.bases[cb.second->id];
 
+    for (size_t i = 0; i < basesSize && fs; ++i) {
+        BasePtr base = std::make_shared<Base>();
+
+        readBase(fs, base, chain.nodes, chain.bases);
         chain.bases[base->id] = base;
     }
 
@@ -130,7 +125,7 @@ MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
 
         std::vector<std::wstring> wds;
         for (const auto& n : base->nodes)
-            wds.push_back(n->value);
+            wds.push_back(n.lock()->value);
         chain.wordsToBase[wds] = base;
     }
 
@@ -154,7 +149,7 @@ void MarkovChain::save(const std::string &filename) {
 
     fs << baseToNode.size() << '\n';
     for (const auto& p : baseToNode)
-        fs << p.first->id << ' ' << p.second->id << '\n';
+        fs << p.first.lock()->id << ' ' << p.second.lock()->id << '\n';
 
     fs << std::flush;
     fs.close();
@@ -170,11 +165,11 @@ std::wstring MarkovChain::next(const std::vector<std::wstring> &base, int n) {
         result += b + L' ';
     result.pop_back();
 
-    BasePtr basePtr =  wordsToBase[lowerBase];
+    BasePtr basePtr =  wordsToBase[lowerBase].lock();
     if (basePtr == nullptr)
         return result;
 
-    NodePtr node = baseToNode[basePtr];
+    NodePtr node = baseToNode[basePtr].lock();
     if (node == nullptr)
         return result;
 
@@ -182,17 +177,54 @@ std::wstring MarkovChain::next(const std::vector<std::wstring> &base, int n) {
         result += L' ';
         result += node->value;
 
-        BasePtr childBase = basePtr->childToBase[node];
+        BasePtr childBase = basePtr->childToBase[node].lock();
         if (childBase == nullptr) break;
         basePtr = childBase;
 
         node = std::max_element(childBase->childToCount.begin(), childBase->childToCount.end(),
                                 [] (const auto& a, const auto& b) {
                                     return a.second < b.second;
-                                })->first;
+                                })->first.lock();
     }
 
     return result;
+}
+
+void MarkovChain::readBase(std::wifstream &fs, BasePtr &base, std::map<long, NodePtr> &nodes,
+                           std::map<long, BasePtr, std::greater<long>> &bases) {
+    base->nodes.clear();
+    base->childToBase.clear();
+    base->childToCount.clear();
+
+    fs >> base->id;
+
+    size_t nodesSize;
+    fs >> nodesSize;
+    base->nodes.reserve(nodesSize);
+    for (size_t i = 0; i < nodesSize; ++i) {
+        long id;
+        fs >> id;
+        base->nodes.push_back(nodes[id]);
+    }
+
+    size_t ccSize;
+    fs >> ccSize;
+    base->childToCount.reserve(ccSize);
+    for (size_t i = 0; i < ccSize; ++i) {
+        long id, count;
+        fs >> id >> count;
+        base->childToCount[nodes[id]] = count;
+    }
+
+    size_t cbSize;
+    fs >> cbSize;
+    base->nodes.reserve(cbSize);
+    for (size_t i = 0; i < cbSize; ++i) {
+        long nId, bId;
+        fs >> nId >> bId;
+        base->childToBase[nodes[nId]] = bases[bId];
+    }
+
 }
 
 std::wstring MarkovChain::removePunctuation(const std::wstring &text) {
