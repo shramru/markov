@@ -27,8 +27,10 @@ int main(int argc, char** argv) {
             std::wcin >> words[i];
 
         std::wcout << L"Please enter count of generating words:" << std::endl;
-        int k;
+        int k = 0;
         std::wcin >> k;
+        if (k < 1)
+            throw std::invalid_argument("invalid count");
 
         std::wstring res = markovChain.next(words, k);
         std::wcout << res << std::endl;
