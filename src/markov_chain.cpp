@@ -61,9 +61,6 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
         NodePtr node = std::make_shared<Node>(word);
         BasePtr newBase = std::make_shared<Base>();
         for (size_t i = 1; i < base->nodes.size(); ++i) {
-         if (base->nodes[i] == nullptr)
-             int a = 5;
-
             newBase->nodes.push_back(base->nodes[i]);
         }
         newBase->nodes.push_back(prev);
@@ -93,7 +90,7 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
 
 MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
     MarkovChain chain;
-    std::wfstream fs(filename);
+    std::wifstream fs(filename);
     if (!fs) {
         fs.close();
         throw std::invalid_argument("File not accessible");

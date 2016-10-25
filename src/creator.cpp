@@ -3,7 +3,7 @@
 #include "markov_chain.hpp"
 
 int main(int argc, char** argv) {
-    std::locale::global(std::locale("en_US.UTF-8"));
+    std::locale::global(std::locale(getenv("LANG")));
 
     if (argc < 4) {
         std::cout << "Please enter filename, chain degree and output file in arguments." << std::endl;
