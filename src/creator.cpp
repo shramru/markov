@@ -26,14 +26,19 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    std::cout << "Loading text from " << filename << std::endl;
     std::wstring content((std::istreambuf_iterator<wchar_t>(fs)), std::istreambuf_iterator<wchar_t>());
 
+    std::cout << "Learning..." << std::endl;
     MarkovChain markovChain = MarkovChain::fromText(content, n);
 
+    std::cout << "Saving to " << output << std::endl;
     try {
         markovChain.save(output);
     } catch (std::exception& e) {
         std::cout << "Error: " << e.what();
     }
+
+    std::cout << "Chain successfully created" << std::endl;
     return 0;
 }

@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
     }
 
     try {
+        std::wcout << L"Loading file..." << std::endl;
         MarkovChain markovChain = MarkovChain::fromSavedFile(filename);
 
         std::wcout << L"Please enter " << n << L" words:" << std::endl;
