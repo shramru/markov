@@ -17,6 +17,11 @@ std::function<bool (const MarkovChain::NodeWPtr&, const MarkovChain::NodeWPtr&)>
     return a.lock()->value == b.lock()->value;
 };
 
+std::function<bool (const MarkovChain::NodeWPtr&, const MarkovChain::NodeWPtr&)>
+        MarkovChain::nodeLess = [] (const NodeWPtr& aw, const NodeWPtr& bw) {
+    return aw.lock()->value < bw.lock()->value;
+};
+
 std::wostream &operator<<(std::wostream &strm, const MarkovChain::Node &n) {
     return strm << n.id << ' ' << n.value << std::endl;
 }

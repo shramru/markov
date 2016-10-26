@@ -28,6 +28,7 @@ class MarkovChain {
 
     static std::function<size_t (const NodeWPtr&)> nodeHash;
     static std::function<bool (const NodeWPtr&, const NodeWPtr&)> nodeEqual;
+    static std::function<bool (const NodeWPtr&, const NodeWPtr&)> nodeLess;
     static std::function<size_t (const BaseWPtr&)> baseHash;
     static std::function<bool (const BaseWPtr&, const BaseWPtr&)> baseEqual;
     static std::function<bool (const BaseWPtr&, const BaseWPtr&)> baseLess;
@@ -37,6 +38,8 @@ class MarkovChain {
     static bool getWord(std::wifstream& fs, std::wstring& word);
     static std::wstring removePunctuation(const std::wstring& text);
     static std::wstring toLowerCase(const std::wstring& text);
+
+    static NodePtr createNode(std::wstring word, std::set<NodeWPtr, decltype(nodeLess)>& nodesWeak);
 
     static void readBase(std::wifstream& fs, std::map<long, NodePtr>& nodes,
                          std::map<long, BasePtr, std::greater<long>>& bases);
@@ -70,6 +73,7 @@ class MarkovChain {
     std::map<long, NodePtr> nodes;
     std::map<long, BasePtr, std::greater<long>> bases;
     std::set<BaseWPtr, decltype(baseLess)> basesWeak;
+    std::set<NodeWPtr, decltype(nodeLess)> nodesWeak;
 
     MarkovChain();
 

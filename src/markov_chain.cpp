@@ -30,7 +30,7 @@ std::function<bool (const std::vector<std::wstring>&, const std::vector<std::wst
 MarkovChain::MarkovChain()
         : baseToNode(BUCKET_SIZE, baseHash, baseEqual),
           wordsToBase(BUCKET_SIZE, vectorHash, vectorEqual),
-          basesWeak(baseLess) {}
+          basesWeak(baseLess), nodesWeak(nodeLess) {}
 
 MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
     MarkovChain chain;
@@ -41,7 +41,6 @@ MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
         fs.close();
         throw std::invalid_argument("File not accessible");
     }
-    //std::wstringstream ss(toLowerCase(words));
 
     /*add first base*/
     std::wstring word;
@@ -52,7 +51,7 @@ MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
         if (!getWord(fs, word)) {
             throw std::runtime_error("Can't make first base");
         }
-        NodePtr nodePtr = std::make_shared<Node>(word);
+        NodePtr nodePtr = createNode(word, chain.nodesWeak);
         base->nodes.push_back(nodePtr);
         chain.nodes[nodePtr->id] = nodePtr;
         wordsBase.push_back(word);
@@ -63,14 +62,14 @@ MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
     if (!getWord(fs, word)) {
         throw std::runtime_error("Can't make first Node-Base relation");
     }
-    NodePtr prev = std::make_shared<Node>(word);
+    NodePtr prev = createNode(word, chain.nodesWeak);
     chain.nodes[prev->id] = prev;
     chain.baseToNode[base] = prev;
     ++base->childToCount[prev];
     /*first base end*/
 
     while (getWord(fs, word)) {
-        NodePtr node = std::make_shared<Node>(word);
+        NodePtr node = createNode(word, chain.nodesWeak);
         BasePtr newBase = std::make_shared<Base>();
         for (size_t i = 1; i < base->nodes.size(); ++i) {
             newBase->nodes.push_back(base->nodes[i]);
@@ -91,10 +90,10 @@ MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
             --Base::currentId;
         }
 
+        chain.nodes[node->id] = node;
+        ++newBase->childToCount[node];
         base->childToBase[prev] = newBase;
         prev = node;
-        chain.nodes[prev->id] = prev;
-        ++newBase->childToCount[prev];
         base = newBase;
     }
 
@@ -209,6 +208,17 @@ std::wstring MarkovChain::next(const std::vector<std::wstring> &base, int n) {
 
 int MarkovChain::getDegree() {
     return degree;
+}
+
+MarkovChain::NodePtr MarkovChain::createNode(std::wstring word, std::set<NodeWPtr, decltype(nodeLess)>& nodesWeak) {
+    NodePtr node = std::make_shared<Node>(word);
+    auto it = nodesWeak.find(node);
+    if (it == nodesWeak.end()) {
+        nodesWeak.insert(node);
+    } else {
+        node = it->lock();
+    }
+    return node;
 }
 
 void MarkovChain::readBase(std::wifstream &fs, std::map<long, NodePtr> &nodes,
