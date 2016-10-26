@@ -62,6 +62,8 @@ class MarkovChain {
         Node(const std::wstring& value);
     };
 
+    int degree;
+
     std::unordered_map<BaseWPtr, NodeWPtr, decltype(baseHash), decltype(baseEqual)> baseToNode;
     std::unordered_map<std::vector<std::wstring>, BaseWPtr, decltype(vectorHash), decltype(vectorEqual)> wordsToBase;
 
@@ -77,6 +79,7 @@ public:
 
     void save(const std::string& filename);
     std::wstring next(const std::vector<std::wstring>& base, int n);
+    int getDegree();
 };
 
 #endif //MARKOV_MARKOVCHAIN_HPP

@@ -16,9 +16,9 @@ cmake . && make
 
 Чтобы сгенерировать текст на основе обученной цепи:
 ```
-./chain_executor <путь до файла с обученной цепью> <порядок цепи>
+./chain_executor <путь до файла с обученной цепью>
 ```
 Например:
 ```
-./chain_executor learned.txt 4
+./chain_executor learned.txt
 ```

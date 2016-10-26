@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "markov_chain.hpp"
+#include "call_with_time.hpp"
 
 int main(int argc, char** argv) {
     std::locale::global(std::locale(getenv("LANG")));
@@ -21,19 +22,12 @@ int main(int argc, char** argv) {
 
     try {
         std::cout << "Learning..." << std::endl;
-        auto t1 = clock();
-        MarkovChain markovChain = MarkovChain::fromTextFile(filename, n);
-        auto t2 = clock();
-        std::cout << "Time spent: " << (t2 - t1) * 1000. / CLOCKS_PER_SEC << " msec" << std::endl;
-
+        MarkovChain markovChain = callWithTime<MarkovChain>(std::cout, &MarkovChain::fromTextFile, filename, n);
         std::cout << "Saving to " << output << std::endl;
-
-        t1 = clock();
+        callWithTime(std::cout, std::bind(&MarkovChain::save, &markovChain, output));
         markovChain.save(output);
-        t2 = clock();
-        std::cout << "Time spent: " << (t2 - t1) * 1000. / CLOCKS_PER_SEC << " msec" << std::endl;
     } catch (std::exception& e) {
-        std::cout << "Error: " << e.what();
+        std::cout << "Error: " << e.what() << std::endl;
     }
 
     std::cout << "Chain successfully created" << std::endl;

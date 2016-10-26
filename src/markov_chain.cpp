@@ -34,6 +34,8 @@ MarkovChain::MarkovChain()
 
 MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
     MarkovChain chain;
+    chain.degree = n;
+
     std::wifstream fs(filename);
     if (!fs) {
         fs.close();
@@ -107,6 +109,8 @@ MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
         throw std::invalid_argument("File not accessible");
     }
 
+    fs >> chain.degree;
+
     size_t nodesSize, basesSize;
     fs >> nodesSize >> basesSize;
 
@@ -138,6 +142,9 @@ MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
         chain.wordsToBase[wds] = base;
     }
 
+    if (!fs)
+        throw std::runtime_error("Bad file");
+
     fs.close();
     return chain;
 }
@@ -149,6 +156,7 @@ void MarkovChain::save(const std::string &filename) {
         throw std::invalid_argument(filename);
     }
 
+    fs << degree << '\n';
     fs << nodes.size() << ' ' << bases.size() << '\n';
 
     for (const auto& n : nodes)
@@ -197,6 +205,10 @@ std::wstring MarkovChain::next(const std::vector<std::wstring> &base, int n) {
     }
 
     return result;
+}
+
+int MarkovChain::getDegree() {
+    return degree;
 }
 
 void MarkovChain::readBase(std::wifstream &fs, std::map<long, NodePtr> &nodes,
