@@ -224,7 +224,6 @@ void MarkovChain::readBase(std::wifstream &fs, BasePtr &base, std::map<long, Nod
         fs >> nId >> bId;
         base->childToBase[nodes[nId]] = bases[bId];
     }
-
 }
 
 std::wstring MarkovChain::removePunctuation(const std::wstring &text) {

@@ -30,11 +30,17 @@ int main(int argc, char** argv) {
     std::wstring content((std::istreambuf_iterator<wchar_t>(fs)), std::istreambuf_iterator<wchar_t>());
 
     std::cout << "Learning..." << std::endl;
+    auto t1 = clock();
     MarkovChain markovChain = MarkovChain::fromText(content, n);
+    auto t2 = clock();
+    std::cout << "Time spent: " << (t2 - t1)*1000. / CLOCKS_PER_SEC << " msec" << std::endl;
 
     std::cout << "Saving to " << output << std::endl;
     try {
+        t1 = clock();
         markovChain.save(output);
+        t2 = clock();
+        std::cout << "Time spent: " << (t2 - t1)*1000. / CLOCKS_PER_SEC << " msec" << std::endl;
     } catch (std::exception& e) {
         std::cout << "Error: " << e.what();
     }
