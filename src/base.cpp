@@ -61,5 +61,5 @@ std::wostream &operator<<(std::wostream &strm, const MarkovChain::Base &b) {
 }
 
 MarkovChain::Base::Base()
-        : id(++currentId), childToCount(BUCKET_SIZE, nodeHash, nodeEqual),
+        : id(currentId++), childToCount(BUCKET_SIZE, nodeHash, nodeEqual),
           childToBase(BUCKET_SIZE, nodeHash, nodeEqual) {}

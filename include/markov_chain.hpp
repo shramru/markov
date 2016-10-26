@@ -34,6 +34,7 @@ class MarkovChain {
     static std::function<size_t (const std::vector<std::wstring>&)> vectorHash;
     static std::function<bool (const std::vector<std::wstring>&, const std::vector<std::wstring>&)> vectorEqual;
 
+    static bool getWord(std::wifstream& fs, std::wstring& word);
     static std::wstring removePunctuation(const std::wstring& text);
     static std::wstring toLowerCase(const std::wstring& text);
 
@@ -71,7 +72,7 @@ class MarkovChain {
     MarkovChain();
 
 public:
-    static MarkovChain fromText(const std::wstring& text, int n);
+    static MarkovChain fromTextFile(const std::string& filename, int n);
     static MarkovChain fromSavedFile(const std::string& filename);
 
     void save(const std::string& filename);

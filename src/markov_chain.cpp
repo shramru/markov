@@ -32,10 +32,14 @@ MarkovChain::MarkovChain()
           wordsToBase(BUCKET_SIZE, vectorHash, vectorEqual),
           basesWeak(baseLess) {}
 
-MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
+MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
     MarkovChain chain;
-    std::wstring words = removePunctuation(text);
-    std::wstringstream ss(toLowerCase(words));
+    std::wifstream fs(filename);
+    if (!fs) {
+        fs.close();
+        throw std::invalid_argument("File not accessible");
+    }
+    //std::wstringstream ss(toLowerCase(words));
 
     /*add first base*/
     std::wstring word;
@@ -43,7 +47,9 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
     chain.bases[base->id] = base;
     std::vector<std::wstring> wordsBase;
     for (int i = 0; i < n; ++i) {
-        ss >> word;
+        if (!getWord(fs, word)) {
+            throw std::runtime_error("Can't make first base");
+        }
         NodePtr nodePtr = std::make_shared<Node>(word);
         base->nodes.push_back(nodePtr);
         chain.nodes[nodePtr->id] = nodePtr;
@@ -52,14 +58,16 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
     chain.wordsToBase[wordsBase] = base;
     chain.basesWeak.insert(base);
 
-    ss >> word;
+    if (!getWord(fs, word)) {
+        throw std::runtime_error("Can't make first Node-Base relation");
+    }
     NodePtr prev = std::make_shared<Node>(word);
     chain.nodes[prev->id] = prev;
     chain.baseToNode[base] = prev;
     ++base->childToCount[prev];
     /*first base end*/
 
-    while (ss >> word) {
+    while (getWord(fs, word)) {
         NodePtr node = std::make_shared<Node>(word);
         BasePtr newBase = std::make_shared<Base>();
         for (size_t i = 1; i < base->nodes.size(); ++i) {
@@ -108,8 +116,7 @@ MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
         chain.nodes[node->id] = node;
     }
 
-
-    for (size_t i = 1; i <= basesSize; ++i)
+    for (size_t i = 0; i < basesSize; ++i)
         chain.bases[i] = std::make_shared<Base>();
 
     for (size_t i = 0; i < basesSize && fs; ++i) {
@@ -224,6 +231,16 @@ void MarkovChain::readBase(std::wifstream &fs, std::map<long, NodePtr> &nodes,
         fs >> nId >> bId;
         base->childToBase[nodes[nId]] = bases[bId];
     }
+}
+
+bool MarkovChain::getWord(std::wifstream &fs, std::wstring& word) {
+    word = L"";
+    while (fs && word == L"") {
+        fs >> word;
+        word = toLowerCase(removePunctuation(word));
+    }
+
+    return !word.empty();
 }
 
 std::wstring MarkovChain::removePunctuation(const std::wstring &text) {

@@ -28,4 +28,4 @@ std::wistream &operator>>(std::wistream &strm, MarkovChain::Node &n) {
 MarkovChain::Node::Node() : id(++currentId) {}
 
 MarkovChain::Node::Node(const std::wstring &value)
-        : id(++currentId), value(value) {}
+        : id(currentId++), value(value) {}
