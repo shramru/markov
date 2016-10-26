@@ -78,6 +78,7 @@ MarkovChain MarkovChain::fromText(const std::wstring& text, int n) {
             chain.wordsToBase[wordsBase] = newBase;
         } else {
             newBase = chain.basesWeak.find(newBase)->lock();
+            --Base::currentId;
         }
 
         base->childToBase[prev] = newBase;
@@ -107,11 +108,12 @@ MarkovChain MarkovChain::fromSavedFile(const std::string& filename) {
         chain.nodes[node->id] = node;
     }
 
-    for (size_t i = 0; i < basesSize && fs; ++i) {
-        BasePtr base = std::make_shared<Base>();
 
-        readBase(fs, base, chain.nodes, chain.bases);
-        chain.bases[base->id] = base;
+    for (size_t i = 1; i <= basesSize; ++i)
+        chain.bases[i] = std::make_shared<Base>();
+
+    for (size_t i = 0; i < basesSize && fs; ++i) {
+        readBase(fs, chain.nodes, chain.bases);
     }
 
     size_t bnSize;
@@ -190,30 +192,28 @@ std::wstring MarkovChain::next(const std::vector<std::wstring> &base, int n) {
     return result;
 }
 
-void MarkovChain::readBase(std::wifstream &fs, BasePtr &base, std::map<long, NodePtr> &nodes,
+void MarkovChain::readBase(std::wifstream &fs, std::map<long, NodePtr> &nodes,
                            std::map<long, BasePtr, std::greater<long>> &bases) {
-    base->nodes.clear();
-    base->childToBase.clear();
-    base->childToCount.clear();
-
-    fs >> base->id;
+    long id;
+    fs >> id;
+    BasePtr& base = bases[id];
 
     size_t nodesSize;
     fs >> nodesSize;
     base->nodes.reserve(nodesSize);
     for (size_t i = 0; i < nodesSize; ++i) {
-        long id;
-        fs >> id;
-        base->nodes.push_back(nodes[id]);
+        long nId;
+        fs >> nId;
+        base->nodes.push_back(nodes[nId]);
     }
 
     size_t ccSize;
     fs >> ccSize;
     base->childToCount.reserve(ccSize);
     for (size_t i = 0; i < ccSize; ++i) {
-        long id, count;
-        fs >> id >> count;
-        base->childToCount[nodes[id]] = count;
+        long nId, count;
+        fs >> nId >> count;
+        base->childToCount[nodes[nId]] = count;
     }
 
     size_t cbSize;

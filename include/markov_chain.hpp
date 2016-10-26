@@ -37,7 +37,7 @@ class MarkovChain {
     static std::wstring removePunctuation(const std::wstring& text);
     static std::wstring toLowerCase(const std::wstring& text);
 
-    static void readBase(std::wifstream& fs, BasePtr& base, std::map<long, NodePtr>& nodes,
+    static void readBase(std::wifstream& fs, std::map<long, NodePtr>& nodes,
                          std::map<long, BasePtr, std::greater<long>>& bases);
 
     struct Base {
