@@ -39,10 +39,7 @@ class MarkovChain {
     static std::wstring removePunctuation(const std::wstring& text);
     static std::wstring toLowerCase(const std::wstring& text);
 
-    static NodePtr createNode(std::wstring word, std::set<NodeWPtr, decltype(nodeLess)>& nodesWeak);
-
-    static void readBase(std::wifstream& fs, std::map<long, NodePtr>& nodes,
-                         std::map<long, BasePtr, std::greater<long>>& bases);
+    static void readBase(std::wifstream& fs, MarkovChain& markovChain);
 
     struct Base {
         static long currentId;
@@ -81,6 +78,7 @@ public:
     static MarkovChain fromTextFile(const std::string& filename, int n);
     static MarkovChain fromSavedFile(const std::string& filename);
 
+    NodePtr createNode(const std::wstring& word);
     void save(const std::string& filename);
     std::wstring next(const std::vector<std::wstring>& base, int n);
     int getDegree();

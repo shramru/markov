@@ -44,7 +44,6 @@ std::function<bool (const MarkovChain::BaseWPtr&, const MarkovChain::BaseWPtr&)>
 std::wostream &operator<<(std::wostream &strm, const MarkovChain::Base &b) {
     strm << b.id << '\n';
 
-    strm << b.nodes.size() << '\n';
     for (const auto& n : b.nodes)
         strm << n.lock()->id << ' ';
     strm << '\n';
