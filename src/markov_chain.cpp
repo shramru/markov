@@ -197,10 +197,24 @@ std::wstring MarkovChain::next(const std::vector<std::wstring> &base, int n) {
         if (childBase == nullptr) break;
         basePtr = childBase;
 
-        node = std::max_element(childBase->childToCount.begin(), childBase->childToCount.end(),
-                                [] (const auto& a, const auto& b) {
-                                    return a.second < b.second;
-                                })->first.lock();
+        long maxCount = 0;
+        std::vector<NodeWPtr> maximumNodes;
+        for (const auto& cc : childBase->childToCount) {
+            long nCount = cc.second;
+            if (nCount >= maxCount) {
+                if (nCount > maxCount) {
+                    maximumNodes.clear();
+                    maxCount = nCount;
+                }
+                maximumNodes.push_back(cc.first);
+            }
+        }
+
+        size_t idx = 0;
+        if (maximumNodes.size() > 1) {
+            idx = rand() % maximumNodes.size();
+        }
+        node = maximumNodes[idx].lock();
     }
 
     return result;
