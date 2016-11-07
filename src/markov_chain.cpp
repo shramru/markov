@@ -100,11 +100,12 @@ MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
         newBase->nodes.push_back(base->nodes[i]);
     }
     newBase->nodes.push_back(prev);
-    BasePtr exBase = chain.basesWeak.find(newBase)->lock();
-    if (exBase != nullptr)
+    auto baseIt = chain.basesWeak.find(newBase);
+    if (baseIt != chain.basesWeak.end()) {
+        BasePtr exBase = chain.basesWeak.find(newBase)->lock();
         newBase = exBase;
-
-    base->childToBase[prev] = newBase;
+        base->childToBase[prev] = newBase;
+    }
 
     return chain;
 }
