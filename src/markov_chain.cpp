@@ -95,6 +95,15 @@ MarkovChain MarkovChain::fromTextFile(const std::string& filename, int n) {
         base = newBase;
     }
 
+    newBase = std::make_shared<Base>();
+    for (size_t i = 1; i < base->nodes.size(); ++i) {
+        newBase->nodes.push_back(base->nodes[i]);
+    }
+    newBase->nodes.push_back(prev);
+    BasePtr exBase = chain.basesWeak.find(newBase)->lock();
+    if (exBase != nullptr)
+        newBase = exBase;
+
     base->childToBase[prev] = newBase;
 
     return chain;

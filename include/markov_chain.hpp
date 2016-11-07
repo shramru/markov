@@ -68,7 +68,7 @@ class MarkovChain {
     std::unordered_map<std::vector<std::wstring>, BaseWPtr, decltype(vectorHash), decltype(vectorEqual)> wordsToBase;
 
     std::map<long, NodePtr> nodes;
-    std::map<long, BasePtr, std::greater<long>> bases;
+    std::map<long, BasePtr> bases;
     std::set<BaseWPtr, decltype(baseLess)> basesWeak;
     std::set<NodeWPtr, decltype(nodeLess)> nodesWeak;
 
